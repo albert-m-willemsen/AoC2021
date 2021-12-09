@@ -24,6 +24,7 @@ var inputs = inputLines
             };
         });
     var (x, y) = result;
+
     Console.WriteLine(x * y);
 };
 
@@ -42,5 +43,6 @@ var inputs = inputLines
             };
         });
     var (x, y, aim) = result;
+
     Console.WriteLine(x * y);
 };
