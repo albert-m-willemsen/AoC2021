@@ -1,4 +1,6 @@
-﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
+﻿using System.Diagnostics;
+
+var inputLines = await File.ReadAllLinesAsync("input.txt");
 
 var state = inputLines[0].Split(',').Select(v => Convert.ToInt32(v));
 var flattenedState = state.Aggregate(new long[9], (acc, fish) =>
@@ -7,22 +9,36 @@ var flattenedState = state.Aggregate(new long[9], (acc, fish) =>
     return acc;
 });
 
+var sw = new Stopwatch();
+
 {
+    sw.Restart();
+
     IList<int> initialState = state.ToList();
     var result = Enumerable.Range(1, 80).Aggregate(initialState, (state, _) => Simulate(state));
-    Console.WriteLine(result.Count);
+
+    sw.Stop();
+    Console.WriteLine($"{result.Count} : {sw.ElapsedMilliseconds}");
 }
 
 {
+    sw.Restart();
+
     var initialState = flattenedState.ToArray();
     var result = Enumerable.Range(1, 80).Aggregate(initialState, (state, _) => Simulate2(state));
-    Console.WriteLine(result.Sum());
+
+    sw.Stop();
+    Console.WriteLine($"{result.Sum()} : {sw.ElapsedMilliseconds}");
 }
 
 {
+    sw.Restart();
+
     var initialState = flattenedState.ToArray();
     var result = Enumerable.Range(1, 256).Aggregate(initialState, (state, _) => Simulate2(state));
-    Console.WriteLine(result.Sum());
+
+    sw.Stop();
+    Console.WriteLine($"{result.Sum()} : {sw.ElapsedMilliseconds}");
 }
 
 static IList<int> Simulate(IList<int> state)
