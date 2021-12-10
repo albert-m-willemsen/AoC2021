@@ -9,62 +9,7 @@ var flattenedState = state.Aggregate(new long[9], (acc, fish) =>
     return acc;
 });
 
-var sw = new Stopwatch();
-
-{
-    sw.Restart();
-
-    IList<int> initialState = state.ToList();
-    var result = Enumerable.Range(1, 80).Aggregate(initialState, (state, _) => Simulate(state));
-
-    sw.Stop();
-    Console.WriteLine($"{result.Count} : {sw.ElapsedMilliseconds}");
-}
-
-{
-    sw.Restart();
-
-    var initialState = flattenedState.ToArray();
-    var result = Enumerable.Range(1, 80).Aggregate(initialState, (state, _) => Simulate2(state));
-
-    sw.Stop();
-    Console.WriteLine($"{result.Sum()} : {sw.ElapsedMilliseconds}");
-}
-
-{
-    sw.Restart();
-
-    var initialState = flattenedState.ToArray();
-    var result = Enumerable.Range(1, 256).Aggregate(initialState, (state, _) => Simulate2(state));
-
-    sw.Stop();
-    Console.WriteLine($"{result.Sum()} : {sw.ElapsedMilliseconds}");
-}
-
-static IList<int> Simulate(IList<int> state)
-{
-    var length = state.Count;
-    var toAppend = 0;
-    for (var i = 0; i < length; i++)
-    {
-        var fish = state[i];
-        if (fish == 0)
-        {
-            state[i] = 6;
-            toAppend += 1;
-        }
-        else
-            state[i] -= 1;
-    }
-
-    var result = state.AsEnumerable();
-    for (; toAppend > 0; toAppend--)
-        result = result.Append(8);
-
-    return result.ToList();
-}
-
-static long[] Simulate2(long[] state)
+var simulate = (long[] state) =>
 {
     var adultFish = state[0];
     for (var i = 0; i < 8; i++)
@@ -74,4 +19,60 @@ static long[] Simulate2(long[] state)
     state[8] = adultFish;
 
     return state;
+};
+
+
+var sw = new Stopwatch();
+
+{
+    var bruteForce = (IList<int> state) =>
+    {
+        var length = state.Count;
+        var toAppend = 0;
+        for (var i = 0; i < length; i++)
+        {
+            var fish = state[i];
+            if (fish == 0)
+            {
+                state[i] = 6;
+                toAppend += 1;
+            }
+            else
+                state[i] -= 1;
+        }
+
+        var result = state.AsEnumerable();
+        for (; toAppend > 0; toAppend--)
+            result = result.Append(8);
+
+        return result.ToList();
+    };
+
+    sw.Restart();
+
+    IList<int> initialState = state.ToList();
+    var result = Enumerable.Range(1, 80).Aggregate(initialState, (state, _) => bruteForce(state));
+
+    sw.Stop();
+    Console.WriteLine($"{result.Count} : {sw.ElapsedMilliseconds}");
+}
+
+{
+    sw.Restart();
+
+    var initialState = flattenedState.ToArray();
+    var result = Enumerable.Range(1, 80).Aggregate(initialState, (state, _) => simulate(state));
+
+    sw.Stop();
+    Console.WriteLine($"{result.Sum()} : {sw.ElapsedMilliseconds}");
+}
+
+{
+    sw.Restart();
+
+    var initialState = flattenedState.ToArray();
+    var result = Enumerable.Range(1, 256).Aggregate(initialState, (state, _) => simulate(state));
+
+    sw.Stop();
+    Console.WriteLine($"{result.Sum()} : {sw.ElapsedMilliseconds}");
 }

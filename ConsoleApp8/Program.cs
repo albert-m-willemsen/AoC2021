@@ -18,6 +18,31 @@ var splitInputs = inputLines
     )
     .ToArray();
 
+var createDecoder = (IEnumerable<string> inputs) =>
+{
+    var codes = inputs.OrderBy(code => code.Length).ToArray();
+    var encoder = new Dictionary<int, string>
+        {
+            { 1, codes[0] },
+            { 4, codes[2] },
+            { 7, codes[1] },
+            { 8, codes[9] }
+        };
+
+    var code690 = codes.Where(code => code.Length == 6);
+    encoder.Add(6, code690.Single(code => !encoder[7].All(wire => code.Contains(wire))));
+    encoder.Add(9, code690.Single(code => encoder[4].All(wire => code.Contains(wire))));
+    encoder.Add(0, code690.Single(code => code != encoder[6] && code != encoder[9]));
+
+    var code235 = codes.Where(code => code.Length == 5);
+    encoder.Add(3, code235.Single(code => encoder[1].All(wire => code.Contains(wire))));
+    encoder.Add(5, code235.Single(code => code.All(wire => encoder[6].Contains(wire))));
+    encoder.Add(2, code235.Single(code => code != encoder[3] && code != encoder[5]));
+
+    return encoder.OrderBy(k => k.Key).ToDictionary(k => k.Value, v => v.Key);
+};
+
+
 {
     var initialResult = new Dictionary<int, int>
     {
@@ -40,7 +65,7 @@ var splitInputs = inputLines
 
 {
     var decoders = splitInputs.Select(input => input[0])
-        .Select(codes => CreateDecoder(codes)).ToArray();
+        .Select(codes => createDecoder(codes)).ToArray();
     var strings = splitInputs.Select(input => input[1])
         .Select((outputs, index) => outputs.Select(output => decoders[index][output]))
         .Select(numbers => string.Concat(numbers));
@@ -49,28 +74,4 @@ var splitInputs = inputLines
     var result = numbers.Sum();
 
     Console.WriteLine(result);
-}
-
-static IDictionary<string, int> CreateDecoder(IEnumerable<string> inputs)
-{
-    var codes = inputs.OrderBy(code => code.Length).ToArray();
-    var encoder = new Dictionary<int, string>
-        {
-            { 1, codes[0] },
-            { 4, codes[2] },
-            { 7, codes[1] },
-            { 8, codes[9] }
-        };
-
-    var code690 = codes.Where(code => code.Length == 6);
-    encoder.Add(6, code690.Single(code => !encoder[7].All(wire => code.Contains(wire))));
-    encoder.Add(9, code690.Single(code => encoder[4].All(wire => code.Contains(wire))));
-    encoder.Add(0, code690.Single(code => code != encoder[6] && code != encoder[9]));
-
-    var code235 = codes.Where(code => code.Length == 5);
-    encoder.Add(3, code235.Single(code => encoder[1].All(wire => code.Contains(wire))));
-    encoder.Add(5, code235.Single(code => code.All(wire => encoder[6].Contains(wire))));
-    encoder.Add(2, code235.Single(code => code != encoder[3] && code != encoder[5]));
-
-    return encoder.OrderBy(k => k.Key).ToDictionary(k => k.Value, v => v.Key);
 }
