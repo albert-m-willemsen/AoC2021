@@ -42,7 +42,7 @@ var inputs = inputLines
                 _ => throw new ArgumentException(nameof(direction)),
             };
         });
-    var (x, y, aim) = result;
+    var (x, y, _) = result;
 
     Console.WriteLine(x * y);
 };

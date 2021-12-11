@@ -23,35 +23,42 @@ var boards = inputLines
     .Select(board => new Board(board))
     .ToArray();
 
-Console.WriteLine(Play1(numbers, boards));
-Console.WriteLine(Play2(numbers, boards));
-
-static int Play1(int[] numbers, Board[] boards)
 {
-    foreach (var number in numbers)
-        foreach (var board in boards)
-            if (board.Mark(number))
-                return board.Unmarked().Sum() * number;
+    var play = (int[] numbers, Board[] boards) =>
+    {
+        foreach (var number in numbers)
+            foreach (var board in boards)
+                if (board.Mark(number))
+                    return board.Unmarked().Sum() * number;
 
-    throw new InvalidOperationException();
+        throw new InvalidOperationException();
+    };
+
+    var result = play(numbers, boards);
+    Console.WriteLine(result);
 }
-
-static int Play2(int[] numbers, Board[] boards)
 {
-    var boardsWon = new int[boards.Length];
-    foreach (var number in numbers)
-        foreach (var board in boards)
-        {
-            board.Mark(number);
-            if (boards.All(b => b.Won))
-                return board.Unmarked().Sum() * number;
-        }
+    var play = (int[] numbers, Board[] boards) =>
+    {
+        var boardsWon = new int[boards.Length];
+        foreach (var number in numbers)
+            foreach (var board in boards)
+            {
+                board.Mark(number);
+                if (boards.All(b => b.Won))
+                    return board.Unmarked().Sum() * number;
+            }
 
-    throw new InvalidOperationException();
+        throw new InvalidOperationException();
+    };
+
+    var result = play(numbers, boards);
+    Console.WriteLine(result);
 }
 
 class Board
 {
+    readonly IDictionary<int, (int x, int y)> lookup;
     readonly int[][] board;
     readonly bool[][] marks;
     readonly int width;
@@ -60,8 +67,14 @@ class Board
     public Board(int[][] board)
     {
         this.board = board;
+
         width = board[0].Length;
         height = board.Length;
+
+        lookup = new Dictionary<int, (int x, int y)>(width * height);
+        for (var y = 0; y < height; y++)
+            for (var x = 0; x < width; x++)
+                lookup.Add(board[y][x], (x, y));
 
         marks = new bool[height][];
         for (int i = 0; i < height; i++)
@@ -72,14 +85,13 @@ class Board
 
     public bool Mark(int number)
     {
-        for (var y = 0; y < height; y++)
-            for (var x = 0; x < width; x++)
-                if (board[y][x] == number)
-                {
-                    marks[y][x] = true;
+        if (lookup.ContainsKey(number))
+        {
+            var (x, y) = lookup[number];
+            marks[y][x] = true;
 
-                    return Check(x, y);
-                }
+            return Check(x, y);
+        }
 
         return false;
     }
@@ -92,7 +104,6 @@ class Board
             Won = true;
 
         return won;
-
     }
 
     public IEnumerable<int> Unmarked()
