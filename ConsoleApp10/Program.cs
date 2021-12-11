@@ -8,30 +8,32 @@ var isCorrectTag = (char b, char e) => b switch
     '<' => e == '>',
     _ => false
 };
-var parseLine = (string line) =>
+var tryValidateLine = (string line, out char error) =>
 {
+    error = '\0';
     var stack = new Stack<char>();
+
     var length = line.Length;
     for (var i = 0; i < length; i++)
     {
-        var c = line[i];
-        if (c == '(' || c == '[' || c == '{' || c == '<')
-            stack.Push(c);
-        else if (c == ')' || c == ']' || c == '}' || c == '>')
+        error = line[i];
+        if (error == '(' || error == '[' || error == '{' || error == '<')
+            stack.Push(error);
+        else if (error == ')' || error == ']' || error == '}' || error == '>')
         {
-            if (!stack.TryPop(out char b) || !isCorrectTag(b, c))
-                return c;
+            if (!stack.TryPop(out char b) || !isCorrectTag(b, error))
+                return false;
         }
         else
-            throw new ArgumentException($"{nameof(c)} = {c}:{(byte)c}");
+            throw new ArgumentException($"{nameof(error)} = {error}:{(byte)error}");
     }
-    return '\0';
+
+    return true;
 };
 
 {
     var score = (char c) => c switch
     {
-        '\0' => 0,
         ')' => 3,
         ']' => 57,
         '}' => 1197,
@@ -39,8 +41,8 @@ var parseLine = (string line) =>
         _ => throw new ArgumentException($"{nameof(c)} = {c}:{(byte)c}")
     };
     var result = inputLines
-        .Select(line => parseLine(line))
-        .Select(error => score(error))
+        .Aggregate<string, char[]>(Array.Empty<char>(), (char[] acc, string line) => !tryValidateLine(line, out char error) ? acc : acc.Concat(new char[] { error }).ToArray())
+        .Select<char, int>((char error) => score(error))
         .Sum();
 
     Console.WriteLine(result);
@@ -80,7 +82,7 @@ var parseLine = (string line) =>
     };
 
     var result = inputLines
-        .Where(line => parseLine(line) == '\0')
+        .Where(line => tryValidateLine(line, out char _))
         .Select(line => completeLine(line))
         .Select(line => line
             .Aggregate(0L, (acc, c) =>
