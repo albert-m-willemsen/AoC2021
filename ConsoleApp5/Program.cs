@@ -1,18 +1,12 @@
-﻿using System.Text.RegularExpressions;
+﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
 
-var inputLines = await File.ReadAllLinesAsync("input.txt");
-
-var lines = inputLines
-    .Select(line =>
-    {
-        var t = Regex.Match(line, @"(\d+),(\d+) -> (\d+),(\d+)");
-        return t.Groups.Values.Skip(1);
-    })
-    .Select(g => g.Select(v => Convert.ToInt32(v.Value)).ToArray())
-    .Select(v => new Line(new Point(v[0], v[1]), new Point(v[2], v[3])))
-    .ToArray();
-
+/// <summary>
+/// Day 5, part 1.
+/// </summary>
+Performance.Measure(() =>
 {
+    var lines = getLines(inputLines);
+
     var lineSet = new Queue<Line>(lines.Where(line => line.IsHorizontal || line.IsVertical));
     var intersections = new HashSet<Point>();
     while (lineSet.Any())
@@ -20,14 +14,19 @@ var lines = inputLines
         var comparer = lineSet.Dequeue();
 
         foreach (var line in lineSet.ToArray())
-        {
             intersections.UnionWith(comparer.Points.Intersect(line.Points));
-        }
     }
-    Console.WriteLine(intersections.Count);
-}
 
+    return intersections.Count;
+});
+
+/// <summary>
+/// Day 5, part 2.
+/// </summary>
+Performance.Measure(() =>
 {
+    var lines = getLines(inputLines);
+
     var lineSet = new Queue<Line>(lines);
     var intersections = new HashSet<Point>();
     while (lineSet.Any())
@@ -35,13 +34,17 @@ var lines = inputLines
         var comparer = lineSet.Dequeue();
 
         foreach (var line in lineSet.ToArray())
-        {
             intersections.UnionWith(comparer.Points.Intersect(line.Points));
-        }
     }
-    Console.WriteLine(intersections.Count);
-}
 
+    return intersections.Count;
+});
+
+static Line[] getLines(string[] lines) =>
+    lines.Select(line => line.Split(" -> ").SelectMany(coord => coord.Split(',')))
+    .Select(g => g.Select(v => Convert.ToInt32(v)).ToArray())
+    .Select(v => new Line(new Point(v[0], v[1]), new Point(v[2], v[3])))
+    .ToArray();
 
 record Line
 {
@@ -117,4 +120,5 @@ record Line
             .ToArray();
     }
 }
+
 record Point(int X, int Y);

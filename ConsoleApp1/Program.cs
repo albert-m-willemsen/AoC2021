@@ -1,22 +1,31 @@
 ﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
 
-var numbers = inputLines.Select(line => Convert.ToInt32(line)).ToList();
-
+/// <summary>
+/// Day 1, part 1.
+/// </summary>
+Performance.Measure(() =>
 {
-    var result = numbers.Skip(1)
+    var numbers = getNumbers(inputLines);
+
+    return numbers.Skip(1)
         .Where((number, index) => number > numbers[index])
         .Count();
+});
 
-    Console.WriteLine(result);
-}
-
+/// <summary>
+/// Day 1, part 1.
+/// </summary>
+Performance.Measure(() =>
 {
+    var numbers = getNumbers(inputLines);
+
     var windows = numbers.Skip(2)
         .Select((_, index) => numbers[index] + numbers[index + 1] + numbers[index + 2])
         .ToArray();
-    var result = windows.Skip(1)
+    return windows.Skip(1)
         .Where((number, index) => number > windows[index])
         .Count();
+});
 
-    Console.WriteLine(result);
-}
+static IList<int> getNumbers(string[] lines)
+    => lines.Select(line => Convert.ToInt32(line)).ToList();

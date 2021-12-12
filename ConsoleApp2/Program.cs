@@ -1,16 +1,13 @@
 ﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
 
-var inputs = inputLines
-    .Select(line =>
-    {
-        var matches = line.Split(' ');
-
-        return (matches[0], Convert.ToInt32(matches[1]));
-    })
-    .ToArray();
-
+/// <summary>
+/// Day 2, part 1.
+/// </summary>
+Performance.Measure(() =>
 {
-    var result = inputs
+    var inputs = getInputs(inputLines);
+
+    var coordinates = inputs
         .Aggregate((0, 0), (acc, input) =>
         {
             var (x, y) = acc;
@@ -23,13 +20,19 @@ var inputs = inputLines
                 _ => throw new ArgumentException(nameof(direction)),
             };
         });
-    var (x, y) = result;
+    var (x, y) = coordinates;
 
-    Console.WriteLine(x * y);
-};
+    return  x * y;
+});
 
+/// <summary>
+/// Day 2, part 2.
+/// </summary>
+Performance.Measure(() =>
 {
-    var result = inputs
+    var inputs = getInputs(inputLines);
+
+    var coordinates = inputs
         .Aggregate((0, 0, 0), (acc, input) =>
         {
             var (x, y, aim) = acc;
@@ -42,7 +45,16 @@ var inputs = inputLines
                 _ => throw new ArgumentException(nameof(direction)),
             };
         });
-    var (x, y, _) = result;
+    var (x, y, _) = coordinates;
 
-    Console.WriteLine(x * y);
-};
+    return x * y;
+});
+
+static (string, int)[] getInputs(string[] lines) =>
+    lines.Select(line =>
+    {
+        var matches = line.Split(' ');
+
+        return (matches[0], Convert.ToInt32(matches[1]));
+    })
+    .ToArray();

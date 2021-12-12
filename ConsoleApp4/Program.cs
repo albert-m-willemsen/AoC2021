@@ -2,59 +2,61 @@
 
 var inputLines = await File.ReadAllLinesAsync("input.txt");
 
-var numbers = inputLines[0]
-    .Split(',')
-    .Select(s => Convert.ToInt32(s))
-    .ToArray();
+/// <summary>
+/// Day 4, part 1.
+/// </summary>
+Performance.Measure(() =>
+{
+    var numbers = getNumbers(inputLines);
+    var boards = getBoards(inputLines);
 
-var boards = inputLines
-    .Skip(1)
-    .Select((v, i) => (v, i))
-    .GroupBy(t => t.i / 6)
-    .Select(group => group
-        .Skip(1)
-        .Select(t => Regex.Matches(t.v, @"\d+")
-            .Select(m => m.Value)
-            .Select(v => Convert.ToInt32(v))
+    foreach (var number in numbers)
+        foreach (var board in boards)
+            if (board.Mark(number))
+                return board.Unmarked().Sum() * number;
+
+    throw new InvalidOperationException();
+});
+
+/// <summary>
+/// Day 4, part 2.
+/// </summary>
+Performance.Measure(() =>
+{
+    var numbers = getNumbers(inputLines);
+    var boards = getBoards(inputLines);
+
+    var boardsWon = new int[boards.Length];
+    foreach (var number in numbers)
+        foreach (var board in boards)
+        {
+            board.Mark(number);
+            if (boards.All(b => b.Won))
+                return board.Unmarked().Sum() * number;
+        }
+
+    throw new InvalidOperationException();
+});
+
+static int[] getNumbers(string[] lines) => lines[0]
+        .Split(',')
+        .Select(s => Convert.ToInt32(s))
+        .ToArray();
+
+
+static Board[] getBoards(string[] lines) => lines.Skip(1)
+        .Select((v, i) => (v, i))
+        .GroupBy(t => t.i / 6)
+        .Select(group => group
+            .Skip(1)
+            .Select(t => t.v.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(v => Convert.ToInt32(v))
+                .ToArray()
+            )
             .ToArray()
         )
-        .ToArray()
-    )
-    .Select(board => new Board(board))
-    .ToArray();
-
-{
-    var play = (int[] numbers, Board[] boards) =>
-    {
-        foreach (var number in numbers)
-            foreach (var board in boards)
-                if (board.Mark(number))
-                    return board.Unmarked().Sum() * number;
-
-        throw new InvalidOperationException();
-    };
-
-    var result = play(numbers, boards);
-    Console.WriteLine(result);
-}
-{
-    var play = (int[] numbers, Board[] boards) =>
-    {
-        var boardsWon = new int[boards.Length];
-        foreach (var number in numbers)
-            foreach (var board in boards)
-            {
-                board.Mark(number);
-                if (boards.All(b => b.Won))
-                    return board.Unmarked().Sum() * number;
-            }
-
-        throw new InvalidOperationException();
-    };
-
-    var result = play(numbers, boards);
-    Console.WriteLine(result);
-}
+        .Select(board => new Board(board))
+        .ToArray();
 
 class Board
 {

@@ -8,7 +8,50 @@ var lengthLookup = new Dictionary<int, int>
     {7, 8 }
 };
 
-var splitInputs = inputLines
+/// <summary>
+/// Day 8, part 1.
+/// </summary>
+Performance.Measure(() => getCodesLines(inputLines)
+    .SelectMany(line => line.output)
+    .Aggregate(
+        new Dictionary<int, int>
+        {
+            {1, 0 },
+            {4, 0 },
+            {7, 0 },
+            {8, 0 }
+        },
+        (acc, code) =>
+        {
+            if (lengthLookup.TryGetValue(code.Length, out int digit))
+                acc[digit] += 1;
+            return acc;
+        }
+    )
+    .Values
+    .Sum()
+);
+
+/// <summary>
+/// Day 8, part 2.
+/// </summary>
+Performance.Measure(() =>
+{
+    var codeLines = getCodesLines(inputLines);
+    var decoders = codeLines
+        .Select(line => createDecoder(line.input))
+        .ToArray();
+    var strings = codeLines
+        .Select((line, index) => line.output
+            .Select(output => decoders[index][output])
+        )
+        .Select(numbers => string.Concat(numbers));
+    var numbers = strings.Select(s => Convert.ToInt32(s));
+
+    return numbers.Sum();
+});
+
+static (string[] input, string[] output)[] getCodesLines(string[] lines) => lines
     .Select(line => line.Split(" | ")
         .Select(codes => codes.Split(' ')
             .Select(code => string.Join("", code.OrderBy(v => v)))
@@ -16,9 +59,10 @@ var splitInputs = inputLines
         )
         .ToArray()
     )
+    .Select(line => (input: line[0], output: line[1]))
     .ToArray();
 
-var createDecoder = (IEnumerable<string> inputs) =>
+static IDictionary<string, int> createDecoder(IEnumerable<string> inputs)
 {
     var codes = inputs.OrderBy(code => code.Length).ToArray();
     var encoder = new Dictionary<int, string>
@@ -41,37 +85,3 @@ var createDecoder = (IEnumerable<string> inputs) =>
 
     return encoder.OrderBy(k => k.Key).ToDictionary(k => k.Value, v => v.Key);
 };
-
-
-{
-    var initialResult = new Dictionary<int, int>
-    {
-        {1, 0 },
-        {4, 0 },
-        {7, 0 },
-        {8, 0 }
-    };
-    var result = splitInputs.Select(input => input[1])
-        .SelectMany(codes => codes)
-        .Aggregate(initialResult, (acc, code) =>
-        {
-            if (lengthLookup.TryGetValue(code.Length, out int digit))
-                acc[digit] += 1;
-            return acc;
-        });
-
-    Console.WriteLine(result.Values.Sum());
-}
-
-{
-    var decoders = splitInputs.Select(input => input[0])
-        .Select(codes => createDecoder(codes)).ToArray();
-    var strings = splitInputs.Select(input => input[1])
-        .Select((outputs, index) => outputs.Select(output => decoders[index][output]))
-        .Select(numbers => string.Concat(numbers));
-    var numbers = strings.Select(s => Convert.ToInt32(s));
-
-    var result = numbers.Sum();
-
-    Console.WriteLine(result);
-}
