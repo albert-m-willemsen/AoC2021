@@ -15,64 +15,56 @@ const string END = "end";
 
 var allPaths = paths
     .Concat(paths.Select(path => path.Reverse().ToArray()))
-    .Where(cave => cave[1] != START)
-    .Where(cave => cave[0] != END);
+    .Select(cave => (origin: cave[0], destination: cave[1]))
+    .Where(path => path.destination != START)
+    .Where(path => path.origin != END);
 
-var routing = allPaths
-    .GroupBy(k => k[0], g => g[1])
-    .OrderBy(route => route.Key, StringComparer.Ordinal)
-    .ToDictionary(k => k.Key, v => v.OrderBy(v => v, StringComparer.Ordinal).ToArray());
+var routes = allPaths
+    .GroupBy(k => k.origin, g => g.destination)
+    .ToDictionary(k => k.Key, v => v.OrderBy(v => v).ToArray());
 
-bool isSmall(string name) => char.IsLower(name[0]);
-bool isValid(IEnumerable<string> route) => route.LastOrDefault() == END;
+bool isSmallCave(string name) => char.IsLower(name[0]);
 
 int walk(int paths, IList<string> path, string origin, Func<IEnumerable<string>, string, bool> selectDestination)
 {
+    if (origin == END)
+        return paths + 1;
+
     path.Add(origin);
-    var getDestinations = () => routing[origin].Where(destination =>
-        selectDestination(path, destination)
-    );
 
-    if (origin == END || !getDestinations().Any())
-    {
-        if (isValid(path))
-            paths++;
+    var destinations = routes[origin]
+        .Where(destination => selectDestination(path, destination))
+        .ToArray();
+    if (!destinations.Any())
         return paths;
-    }
 
-    return getDestinations().AsParallel()
+    return destinations.AsParallel()
         .Aggregate(paths, (acc, destination) =>
             walk(acc, path.ToList(), destination, selectDestination)
         );
 };
 
-{
-    var result = walk(0, new List<string>(), START, (path, cave) =>
-        !isSmall(cave) || !path.Contains(cave)
-    );
+var result1 = walk(0, new List<string>(), START, (path, cave) =>
+    !isSmallCave(cave) || !path.Contains(cave)
+);
 
-    Console.WriteLine(result);
-}
+Console.WriteLine(result1);
 
 {
-    var smallCaves = routing
+    var smallCaves = routes
         .Select(route => route.Key)
         .Where(origin => origin != START)
-        .Where(origin => isSmall(origin))
+        .Where(origin => isSmallCave(origin))
         .ToArray();
 
-    var normalResult = walk(0, new List<string>(), START, (path, cave) =>
-        !isSmall(cave) || !path.Contains(cave)
-    );
-
-    var result = smallCaves.AsParallel()
+    var result2 = smallCaves.AsParallel()
         .Aggregate(0, (acc, caveToVisitTwice) =>
             walk(acc, new List<string>(), START, (route, cave) =>
-                !isSmall(cave)
+                !isSmallCave(cave)
                 || !route.Contains(cave)
                 || (cave == caveToVisitTwice && route.Count(cave => cave == caveToVisitTwice) < 2)
             )
         );
 
-    Console.WriteLine(result - (normalResult * smallCaves.Length) + normalResult);
+    Console.WriteLine(result2 - (result1 * smallCaves.Length) + result1);
 }
