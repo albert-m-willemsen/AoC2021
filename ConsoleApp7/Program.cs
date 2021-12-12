@@ -2,38 +2,52 @@
 
 var inputLines = await File.ReadAllLinesAsync("input.txt");
 
-var positions = inputLines[0].Split(',').Select(v => Convert.ToInt32(v)).ToArray();
+/// <summary>
+/// Day 7, part 1.
+/// </summary>
+Performance.Measure(() =>
+{
+    var positions = getPositions(inputLines);
 
-var calculateStep = (int n) =>
-    Enumerable.Range(1, n).Aggregate<int, long>(0, (p, item) => p + item);
+    var destinations = positions.Distinct()
+        .OrderBy(v => v);
 
-var calculatTotalCost = (int[] positions, int destination) =>
-    positions.Select(position => Math.Abs(destination - position)).Sum();
+    return destinations.AsParallel()
+        .Select(destination => (destination, total: calculatTotalCost(positions, destination)))
+        .MinBy(t => t.total);
+});
 
-var calculateStepsTotalCost = (ConcurrentDictionary<int, long> lookup, int[] positions, int destination) =>
+/// <summary>
+/// Day 7, part 2.
+/// </summary>
+Performance.Measure(() =>
+{
+    var positions = getPositions(inputLines);
+
+    var startDestintion = positions.Min();
+    var endDestintation = positions.Max();
+    var lookup = new ConcurrentDictionary<int, long>();
+
+    return Enumerable.Range(startDestintion, endDestintation - startDestintion + 1).AsParallel()
+        .Select(destination => (destination, total: calculateStepsTotalCost(lookup, positions, destination)))
+        .MinBy(t => t.total);
+});
+
+static int[] getPositions(string[] lines) => lines[0].Split(',')
+    .Select(v => Convert.ToInt32(v))
+    .ToArray();
+
+static long calculateStep(int n) => Enumerable.Range(1, n)
+    .Aggregate<int, long>(0, (p, item) => p + item);
+
+static int calculatTotalCost(int[] positions, int destination) =>
+    positions.Select(position => Math.Abs(destination - position))
+        .Sum();
+
+long calculateStepsTotalCost(ConcurrentDictionary<int, long> lookup, int[] positions, int destination) =>
     positions.Select(position => Math.Abs(destination - position))
         .AsParallel()
         .Select(step => lookup.GetOrAdd(step, n => calculateStep(n)))
         .AsParallel()
         .AsEnumerable()
         .Sum();
-
-{
-    var destinations = positions.Distinct().OrderBy(v => v);
-    var result = destinations.AsParallel()
-        .Select(destination => (destination, total: calculatTotalCost(positions, destination)))
-        .MinBy(t => t.total);
-
-    Console.WriteLine(result);
-}
-
-{
-    var startDestintion = positions.Min();
-    var endDestintation = positions.Max();
-    var lookup = new ConcurrentDictionary<int, long>();
-    var result = Enumerable.Range(startDestintion, endDestintation - startDestintion + 1).AsParallel()
-        .Select(destination => (destination, total: calculateStepsTotalCost(lookup, positions, destination)))
-        .MinBy(t => t.total);
-
-    Console.WriteLine(result);
-}

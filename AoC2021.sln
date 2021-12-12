@@ -25,7 +25,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp10", "ConsoleApp1
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp11", "ConsoleApp11\ConsoleApp11.csproj", "{286B5487-AD21-459C-BBCC-CBF9B2C42748}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp12", "ConsoleApp12\ConsoleApp12.csproj", "{90C2695C-ADF4-4AAA-A312-99516AA791D3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp12", "ConsoleApp12\ConsoleApp12.csproj", "{90C2695C-ADF4-4AAA-A312-99516AA791D3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8507C167-4600-492F-B926-A6006E8810A9}"
+	ProjectSection(SolutionItems) = preProject
+		Shared\Performance.cs = Shared\Performance.cs
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
