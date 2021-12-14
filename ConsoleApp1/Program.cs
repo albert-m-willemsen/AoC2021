@@ -1,31 +1,39 @@
-﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
+﻿var inputLines = await Runner.LoadInput("input.txt");
 
-/// <summary>
-/// Day 1, part 1.
-/// </summary>
-Performance.Measure(() =>
-{
-    var numbers = getNumbers(inputLines);
+Runner.Run(inputLines, Day1Part1);
+Runner.Run(inputLines, Day1Part2);
 
-    return numbers.Skip(1)
-        .Where((number, index) => number > numbers[index])
-        .Count();
-});
+[Challenge(1, 1)]
+static int Day1Part1(IImmutableList<string> lines) =>
+    CountIncreases(
+        GetNumbers(lines)
+    );
 
-/// <summary>
-/// Day 1, part 1.
-/// </summary>
-Performance.Measure(() =>
-{
-    var numbers = getNumbers(inputLines);
+[Challenge(1, 2)]
+static int Day1Part2(IImmutableList<string> lines) =>
+    CountIncreases(
+        CreateWindow(
+                GetNumbers(lines),
+                3,
+                Add
+            )
+    );
 
-    var windows = numbers.Skip(2)
-        .Select((_, index) => numbers[index] + numbers[index + 1] + numbers[index + 2])
-        .ToArray();
-    return windows.Skip(1)
-        .Where((number, index) => number > windows[index])
-        .Count();
-});
+static IImmutableList<int> GetNumbers(IImmutableList<string> lines) =>
+    lines.Select(line => Convert.ToInt32(line))
+        .ToImmutableArray();
 
-static IList<int> getNumbers(string[] lines)
-    => lines.Select(line => Convert.ToInt32(line)).ToList();
+static int CountIncreases(IEnumerable<int> numbers) =>
+    numbers.Skip(1)
+        .Zip(numbers, IsIncreased)
+        .Count(w => w);
+
+static bool IsIncreased(int curr, int prev) =>
+    curr > prev;
+
+static IImmutableList<int> CreateWindow(IEnumerable<int> numbers, int size, Func<int, int, int> func) =>
+    Enumerable.Range(1, size - 1)
+        .Aggregate(numbers, (acc, s) => acc.Zip(numbers.Skip(s), func))
+        .ToImmutableArray();
+
+static int Add(int l, int r) => l + r;

@@ -1,60 +1,45 @@
-﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
+﻿var inputLines = await Runner.LoadInput("input.txt");
 
-/// <summary>
-/// Day 2, part 1.
-/// </summary>
-Performance.Measure(() =>
-{
-    var inputs = getInputs(inputLines);
+Runner.Run(inputLines, Day2Part1);
+Runner.Run(inputLines, Day2Part2);
 
-    var coordinates = inputs
-        .Aggregate((0, 0), (acc, input) =>
+[Challenge(2, 1)]
+static int Day2Part1(IImmutableList<string> lines) =>
+    GetInputs(lines)
+        .Aggregate((x: 0, y: 0), (acc, input) =>
         {
             var (x, y) = acc;
             var (direction, magnitude) = input;
             return direction switch
             {
-                "up" => (x, y - magnitude),
-                "down" => (x, y + magnitude),
-                "forward" => (x + magnitude, y),
+                Direction.up => (x, y - magnitude),
+                Direction.down => (x, y + magnitude),
+                Direction.forward => (x + magnitude, y),
                 _ => throw new ArgumentException(nameof(direction)),
             };
-        });
-    var (x, y) = coordinates;
+        }, r => r.x * r.y);
 
-    return  x * y;
-});
-
-/// <summary>
-/// Day 2, part 2.
-/// </summary>
-Performance.Measure(() =>
-{
-    var inputs = getInputs(inputLines);
-
-    var coordinates = inputs
-        .Aggregate((0, 0, 0), (acc, input) =>
+[Challenge(2, 2)]
+static int Day2Part2(IImmutableList<string> lines) =>
+    GetInputs(lines)
+        .Aggregate((x: 0, y: 0, aim: 0), (acc, input) =>
         {
             var (x, y, aim) = acc;
             var (direction, magnitude) = input;
             return direction switch
             {
-                "up" => (x, y, aim - magnitude),
-                "down" => (x, y, aim + magnitude),
-                "forward" => (x + magnitude, y + aim * magnitude, aim),
+                Direction.up => (x, y, aim - magnitude),
+                Direction.down => (x, y, aim + magnitude),
+                Direction.forward => (x + magnitude, y + aim * magnitude, aim),
                 _ => throw new ArgumentException(nameof(direction)),
             };
-        });
-    var (x, y, _) = coordinates;
+        }, r => r.x * r.y);
 
-    return x * y;
-});
+static IImmutableList<(Direction direction, int magnitude)> GetInputs(IImmutableList<string> lines) =>
+    lines.SelectMany(line => line.Split(' ')
+        .Chunk(2)
+        .Select(match => (Enum.Parse<Direction>(match[0]), Convert.ToInt32(match[1])))
+    )
+    .ToImmutableArray();
 
-static (string, int)[] getInputs(string[] lines) =>
-    lines.Select(line =>
-    {
-        var matches = line.Split(' ');
-
-        return (matches[0], Convert.ToInt32(matches[1]));
-    })
-    .ToArray();
+enum Direction { up, down, forward }

@@ -1,39 +1,38 @@
-﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
+﻿var inputLines = await Runner.LoadInput("input.txt");
 
-/// <summary>
-/// Day 11, part 1.
-/// </summary>
-Performance.Measure(() =>
+Runner.Run(inputLines, Day11Part1);
+Runner.Run(inputLines, Day11Part2);
+
+[Challenge(11, 1)]
+static int Day11Part1(IImmutableList<string> lines)
 {
-    var data = generateData(inputLines);
+    var data = GenerateData(lines);
 
     return Enumerable.Range(1, 100)
-        .Aggregate(0, (acc, _) => acc + simulate(ref data));
-});
+        .Aggregate(0, (acc, _) => acc + Simulate(ref data));
+}
 
-/// <summary>
-/// Day 11, part 2.
-/// </summary>
-Performance.Measure(() =>
+[Challenge(11, 1)]
+static int Day11Part2(IImmutableList<string> lines)
 {
     var step = 0;
-    var data = generateData(inputLines);
+    var data = GenerateData(lines);
 
-    while (!allFlashed(ref data))
+    while (!AllFlashed(ref data))
     {
-        simulate(ref data);
+        Simulate(ref data);
         step++;
     }
 
     return step;
-});
+}
 
-static (int v, bool f)[][] generateData(string[] lines) => lines
+static (int v, bool f)[][] GenerateData(IImmutableList<string> lines) => lines
     .Select(line => line.Select(c => c - '0').ToArray())
     .Select(row => row.Select(col => (col, false)).ToArray())
     .ToArray();
 
-static void clearFlashed(ref (int v, bool)[][] data)
+static void ClearFlashed(ref (int v, bool)[][] data)
 {
     var width = data[0].Length;
     var height = data.Length;
@@ -42,9 +41,9 @@ static void clearFlashed(ref (int v, bool)[][] data)
             data[y][x] = (data[y][x].v, false);
 }
 
-static int simulate(ref (int v, bool f)[][] data)
+static int Simulate(ref (int v, bool f)[][] data)
 {
-    clearFlashed(ref data);
+    ClearFlashed(ref data);
 
     int flashes = 0;
     var width = data[0].Length;
@@ -56,7 +55,7 @@ static int simulate(ref (int v, bool f)[][] data)
 
     for (var y = 0; y < height; y++)
         for (var x = 0; x < width; x++)
-            flashes += flash(ref data, x, y);
+            flashes += Flash(ref data, x, y);
 
     for (var y = 0; y < height; y++)
         for (var x = 0; x < width; x++)
@@ -66,7 +65,7 @@ static int simulate(ref (int v, bool f)[][] data)
     return flashes;
 };
 
-static int flash(ref (int v, bool f)[][] data, int x, int y)
+static int Flash(ref (int v, bool f)[][] data, int x, int y)
 {
     if (data[y][x].f || data[y][x].v <= 9)
         return 0;
@@ -98,24 +97,24 @@ static int flash(ref (int v, bool f)[][] data, int x, int y)
         data[y + 1][x + 1].v += 1;
 
     if (hasLeft)
-        flashes += flash(ref data, x - 1, y);
+        flashes += Flash(ref data, x - 1, y);
     if (hasUp)
-        flashes += flash(ref data, x, y - 1);
+        flashes += Flash(ref data, x, y - 1);
     if (hasRight)
-        flashes += flash(ref data, x + 1, y);
+        flashes += Flash(ref data, x + 1, y);
     if (hasDown)
-        flashes += flash(ref data, x, y + 1);
+        flashes += Flash(ref data, x, y + 1);
     if (hasLeft && hasUp)
-        flashes += flash(ref data, x - 1, y - 1);
+        flashes += Flash(ref data, x - 1, y - 1);
     if (hasRight && hasUp)
-        flashes += flash(ref data, x + 1, y - 1);
+        flashes += Flash(ref data, x + 1, y - 1);
     if (hasLeft && hasDown)
-        flashes += flash(ref data, x - 1, y + 1);
+        flashes += Flash(ref data, x - 1, y + 1);
     if (hasRight && hasDown)
-        flashes += flash(ref data, x + 1, y + 1);
+        flashes += Flash(ref data, x + 1, y + 1);
 
     return flashes;
 }
 
-static bool allFlashed(ref (int, bool f)[][] data) =>
+static bool AllFlashed(ref (int, bool f)[][] data) =>
     data.All(row => row.All(col => col.f));

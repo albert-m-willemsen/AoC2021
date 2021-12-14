@@ -1,35 +1,29 @@
-﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
+﻿using Shared;
 
-/// <summary>
-/// Day 10, part 1.
-/// </summary>
-Performance.Measure(() =>
-{
-    return inputLines
-        .Aggregate(Array.Empty<char>(), (acc, line) =>
-            tryValidateLine(line, out char error)
-                ? acc
-                : acc.Concat(new char[] { error }).ToArray())
-        .Select((error) => score1(error))
-        .Sum();
-});
+var inputLines = await Runner.LoadInput("input.txt");
 
-/// <summary>
-/// Day 10, part 2.
-/// </summary>
-Performance.Measure(() =>
-{
-    var lineCompletions = inputLines
-        .Where(line => tryValidateLine(line, out char _))
+Runner.Run(inputLines, Day10Part1);
+Runner.Run(inputLines, Day10Part2);
+
+[Challenge(10, 1)]
+static int Day10Part1(IImmutableList<string> lines) =>
+    lines.Aggregate(ImmutableArray<char>.Empty, (acc, line) =>
+        tryValidateLine(line, out char error)
+        ? acc
+        : acc.Append(error).ToImmutableArray()
+    )
+    .Select((error) => score1(error))
+    .Sum();
+
+[Challenge(10, 2)]
+static long Day10Part2(IImmutableList<string> lines) =>
+    lines.Where(line => tryValidateLine(line, out char _))
         .Select(line => completeLine(line))
         .Select(line => line
             .Aggregate(0L, (acc, c) => acc * 5 + score2(c))
         )
         .OrderBy(v => v)
-        .ToArray();
-
-    return lineCompletions[(lineCompletions.Length) / 2];
-});
+        .Middle();
 
 static int score1(char c) => c switch
 {
@@ -37,7 +31,7 @@ static int score1(char c) => c switch
     ']' => 57,
     '}' => 1197,
     '>' => 25137,
-    _ => throw new ArgumentException($"{nameof(c)} = '{c}':{(byte)c}")
+    _ => throw new NotImplementedException()
 };
 
 static int score2(char c) => c switch
@@ -46,15 +40,15 @@ static int score2(char c) => c switch
     ']' => 2,
     '}' => 3,
     '>' => 4,
-    _ => throw new ArgumentException($"{nameof(c)} = '{c}':{(byte)c}")
+    _ => throw new NotImplementedException()
 };
 
-static bool isCorrectTag(char b, char e) => b switch
+static bool isCorrectTag(char b, char e) => e switch
 {
-    '(' => e == ')',
-    '[' => e == ']',
-    '{' => e == '}',
-    '<' => e == '>',
+    ')' => b == '(',
+    ']' => b == '[',
+    '}' => b == '{',
+    '>' => b == '<',
     _ => false
 };
 
@@ -63,8 +57,7 @@ static bool tryValidateLine(string line, out char error)
     error = '\0';
     var stack = new Stack<char>();
 
-    var length = line.Length;
-    for (var i = 0; i < length; i++)
+    for (var i = 0; i < line.Length; i++)
     {
         var c = line[i];
         if (c == '(' || c == '[' || c == '{' || c == '<')
@@ -90,14 +83,13 @@ static char getCorrectTag(char tag) => tag switch
     '[' => ']',
     '{' => '}',
     '<' => '>',
-    _ => throw new ArgumentException($"{nameof(tag)} = '{tag}':{(byte)tag}")
+    _ => throw new NotImplementedException()
 };
 
 static string completeLine(string line)
 {
     var stack = new Stack<char>();
-    var lineLength = line.Length;
-    for (var i = 0; i < lineLength; i++)
+    for (var i = 0; i < line.Length; i++)
     {
         var c = line[i];
         if (c == '(' || c == '[' || c == '{' || c == '<')

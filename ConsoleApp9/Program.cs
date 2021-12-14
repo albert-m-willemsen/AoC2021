@@ -1,63 +1,56 @@
-﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
+﻿var inputLines = await Runner.LoadInput("input.txt");
 
-/// <summary>
-/// Day 9, part 1.
-/// </summary>
-Performance.Measure(() =>
+Runner.Run(inputLines, Day9Part1);
+Runner.Run(inputLines, Day9Part2);
+
+[Challenge(9, 1)]
+static int Day9Part1(IImmutableList<string> lines)
 {
-    var heightMap = getHeightMap(inputLines);
-    return heightMap
-        .Select((line, y) => line.Where((_, x) => isLowPoint(heightMap, x, y)))
-        .Aggregate((IEnumerable<int>)Array.Empty<int>(), (acc, line) => acc.Concat(line))
+    var heightMap = getHeightMap(lines);
+    return heightMap.Select((value, i) => isLowPoint(heightMap, i))
+        .Aggregate(ImmutableArray<int>.Empty, (acc, line) => acc.Concat(line).ToImmutableArray())
         .Select(point => point + 1)
         .Sum();
-});
+}
 
-/// <summary>
-/// Day 9, part 2.
-/// </summary>
-Performance.Measure(() =>
+[Challenge(9, 2)]
+static int Day9Part2(IImmutableList<string> lines)
 {
-    var heightMap = getHeightMap(inputLines);
-    var basinMap = heightMap
-        .Select(line => line.Select(point => point < 9).ToArray())
-        .ToArray();
+    var heightMap = getHeightMap(lines);
+    var basinMap = new ImmutableArray2D<bool>(heightMap.Select(point => point < 9), heightMap.Width, heightMap.Height);
 
-    var width = basinMap[0].Length;
-    var height = basinMap.Length;
-    var basins = new List<int>();
-    for (var y = 0; y < height - 1; y++)
-        for (var x = 0; x < width - 1; x++)
-            if (basinMap[y][x])
-                basins.Add(walkBasin(ref basinMap, x, y));
+    var basinsSizes = new List<int>();
+    for (var y = 0; y < basinMap.Height - 1; y++)
+        for (var x = 0; x < basinMap.Width - 1; x++)
+            if (basinMap[x, y])
+                basinsSizes.Add(walkBasin(ref basinMap, x, y));
 
-    return basins.OrderByDescending(x => x)
+    return basinsSizes.OrderByDescending(x => x)
         .Take(3)
         .Aggregate(1, (acc, x) => acc * x);
-});
+}
 
-static int[][] getHeightMap(string[] lines) => lines
-    .Select(line =>
-        line.Select(c => c - '0')
-            .ToArray()
-    )
-    .ToArray();
+static ImmutableArray2D<int> getHeightMap(IImmutableList<string> lines) =>
+    new(
+        lines.SelectMany(line =>
+            line.Select(c => c - '0').ToImmutableArray()
+        ).ToImmutableArray(),
+        lines[0].Length,
+        lines.Count
+    );
 
-static bool isLowPoint(int[][] map, int x, int y)
+static bool isLowPoint(ImmutableArray2D<int> map, int x, int y)
 {
-    var width = map[0].Length;
-    var height = map.Length;
-
-    var point = map[y][x];
-    var left = x > 0 ? map[y][x - 1] : 10;
-    var top = y > 0 ? map[y - 1][x] : 10;
-    var right = x < width - 1 ? map[y][x + 1] : 10;
-    var bottom = y < height - 1 ? map[y + 1][x] : 10;
+    var point = map[x, y];
+    var left = x > 0 ? map[x - 1, y] : 10;
+    var top = y > 0 ? map[x, y - 1] : 10;
+    var right = x < map.Width - 1 ? map[x + 1, y] : 10;
+    var bottom = y < map.Height - 1 ? map[x, y + 1] : 10;
 
     return point < Math.Min(Math.Min(left, right), Math.Min(top, bottom));
 };
 
-static int walkBasin(ref bool[][] map, int ix, int iy)
+static int walkBasin(ref ImmutableArray<ImmutableArray<bool>> map, int ix, int iy)
 {
     var result = 0;
     var queue = new HashSet<(int x, int y)> { (ix, iy) };
@@ -81,7 +74,8 @@ static int walkBasin(ref bool[][] map, int ix, int iy)
             if (p.y < height - 1 && map[p.y + 1][p.x])
                 queue.Add((p.x, p.y + 1));
 
-            map[p.y][p.x] = false;
+            map.SetItem(p.y, map[p.y].SetItem(p.x, false));
+
             result++;
         }
     }
