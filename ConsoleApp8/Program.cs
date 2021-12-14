@@ -1,66 +1,69 @@
-﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
+﻿var inputLines = await Runner.LoadInput("input.txt");
 
-var lengthLookup = new Dictionary<int, int>
+Runner.Run(inputLines, Day8Part1);
+Runner.Run(inputLines, Day8Part2);
+
+[Challenge(8, 1)]
+static int Day8Part1(IImmutableList<string> lines) =>
+    getCodesLines(lines)
+        .SelectMany(line => line.outputs)
+        .Aggregate(
+            new Dictionary<int, int>
+            {
+                {1, 0 },
+                {4, 0 },
+                {7, 0 },
+                {8, 0 }
+            },
+            (acc, code) =>
+            {
+                if (getLengthLookup().TryGetValue(code.Length, out int digit))
+                    acc[digit] += 1;
+                return acc;
+            }
+        )
+        .Values
+        .Sum();
+
+[Challenge(8, 2)]
+static int Day8Part2(IImmutableList<string> lines)
 {
-    {2, 1 },
-    {3, 7 },
-    {4, 4 },
-    {7, 8 }
-};
-
-/// <summary>
-/// Day 8, part 1.
-/// </summary>
-Performance.Measure(() => getCodesLines(inputLines)
-    .SelectMany(line => line.output)
-    .Aggregate(
-        new Dictionary<int, int>
-        {
-            {1, 0 },
-            {4, 0 },
-            {7, 0 },
-            {8, 0 }
-        },
-        (acc, code) =>
-        {
-            if (lengthLookup.TryGetValue(code.Length, out int digit))
-                acc[digit] += 1;
-            return acc;
-        }
-    )
-    .Values
-    .Sum()
-);
-
-/// <summary>
-/// Day 8, part 2.
-/// </summary>
-Performance.Measure(() =>
-{
-    var codeLines = getCodesLines(inputLines);
+    var codeLines = getCodesLines(lines);
     var decoders = codeLines
-        .Select(line => createDecoder(line.input))
+        .Select(line => line.inputs)
+        .Select(input => createDecoder(input))
         .ToArray();
     var strings = codeLines
-        .Select((line, index) => line.output
+        .Select(line => line.outputs)
+        .Select((output, index) => output
             .Select(output => decoders[index][output])
         )
         .Select(numbers => string.Concat(numbers));
     var numbers = strings.Select(s => Convert.ToInt32(s));
 
     return numbers.Sum();
-});
+}
 
-static (string[] input, string[] output)[] getCodesLines(string[] lines) => lines
-    .Select(line => line.Split(" | ")
+static IImmutableDictionary<int, int> getLengthLookup() =>
+    new Dictionary<int, int>
+    {
+        {2, 1 },
+        {3, 7 },
+        {4, 4 },
+        {7, 8 }
+    }
+    .ToImmutableDictionary();
+
+static IImmutableList<(ImmutableArray<string> inputs, ImmutableArray<string> outputs)> getCodesLines(IImmutableList<string> lines) =>
+    lines.Select(line => line.Split(" | ")
         .Select(codes => codes.Split(' ')
-            .Select(code => string.Join("", code.OrderBy(v => v)))
-            .ToArray()
+            .Select(code => string.Concat(code.OrderBy(v => v)))
+            .ToImmutableArray()
         )
-        .ToArray()
+        .ToImmutableArray()
     )
-    .Select(line => (input: line[0], output: line[1]))
-    .ToArray();
+    .Select(line => (line[0], line[1]))
+    .ToImmutableArray();
 
 static IDictionary<string, int> createDecoder(IEnumerable<string> inputs)
 {

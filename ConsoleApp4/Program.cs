@@ -1,86 +1,69 @@
-﻿using System.Text.RegularExpressions;
+﻿var inputLines = await Runner.LoadInput("input.txt");
 
-var inputLines = await File.ReadAllLinesAsync("input.txt");
+Runner.Run(inputLines, Day4Part1);
+Runner.Run(inputLines, Day4Part2);
 
-/// <summary>
-/// Day 4, part 1.
-/// </summary>
-Performance.Measure(() =>
+[Challenge(4, 1)]
+static int Day4Part1(IImmutableList<string> lines)
 {
-    var numbers = getNumbers(inputLines);
-    var boards = getBoards(inputLines);
+    var numbers = GetNumbers(lines);
+    var boards = GetBoards(lines);
 
     foreach (var number in numbers)
         foreach (var board in boards)
             if (board.Mark(number))
-                return board.Unmarked().Sum() * number;
+                return board.SumUnmarked() * number;
 
     throw new InvalidOperationException();
-});
+}
 
-/// <summary>
-/// Day 4, part 2.
-/// </summary>
-Performance.Measure(() =>
+[Challenge(4, 2)]
+static int Day4Part2(IImmutableList<string> lines)
 {
-    var numbers = getNumbers(inputLines);
-    var boards = getBoards(inputLines);
+    var numbers = GetNumbers(lines);
+    var boards = GetBoards(lines);
 
-    var boardsWon = new int[boards.Length];
     foreach (var number in numbers)
         foreach (var board in boards)
         {
             board.Mark(number);
             if (boards.All(b => b.Won))
-                return board.Unmarked().Sum() * number;
+                return board.SumUnmarked() * number;
         }
 
     throw new InvalidOperationException();
-});
+}
 
-static int[] getNumbers(string[] lines) => lines[0]
-        .Split(',')
-        .Select(s => Convert.ToInt32(s))
-        .ToArray();
+static IImmutableList<int> GetNumbers(IImmutableList<string> lines) => lines[0]
+    .Split(',')
+    .Select(s => Convert.ToInt32(s))
+    .ToImmutableArray();
 
 
-static Board[] getBoards(string[] lines) => lines.Skip(1)
-        .Select((v, i) => (v, i))
-        .GroupBy(t => t.i / 6)
-        .Select(group => group
+static IImmutableList<Board> GetBoards(IImmutableList<string> lines) => lines
+    .Skip(1)
+    .Chunk(6)
+    .Select(chunk => chunk
             .Skip(1)
-            .Select(t => t.v.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Select(v => Convert.ToInt32(v))
-                .ToArray()
+            .SelectMany(v => v
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(v => Convert.ToInt32(v)
             )
-            .ToArray()
         )
-        .Select(board => new Board(board))
-        .ToArray();
+    )
+    .Select(board => new Board(board, 5, 5))
+    .ToImmutableArray();
 
 class Board
 {
-    readonly IDictionary<int, (int x, int y)> lookup;
-    readonly int[][] board;
-    readonly bool[][] marks;
-    readonly int width;
-    readonly int height;
+    private ImmutableArray2D<bool> marks;
+    private IImmutableDictionary<int, (int x, int y)> lookup;
 
-    public Board(int[][] board)
+    public Board(IEnumerable<int> board, int width, int height)
     {
-        this.board = board;
-
-        width = board[0].Length;
-        height = board.Length;
-
-        lookup = new Dictionary<int, (int x, int y)>(width * height);
-        for (var y = 0; y < height; y++)
-            for (var x = 0; x < width; x++)
-                lookup.Add(board[y][x], (x, y));
-
-        marks = new bool[height][];
-        for (int i = 0; i < height; i++)
-            marks[i] = new bool[width];
+        marks = new(false, width, height);
+        lookup = board.Select((n, i) => (n, c: marks.ToCoords(i)))
+            .ToImmutableDictionary(k => k.n, v => v.c);
     }
 
     public bool Won { get; private set; }
@@ -89,30 +72,18 @@ class Board
     {
         if (lookup.ContainsKey(number))
         {
-            var (x, y) = lookup[number];
-            marks[y][x] = true;
+            var (x, y) = lookup.GetValueOrDefault(number);
+            lookup = lookup.Remove(number);
 
-            return Check(x, y);
+            marks = marks.SetItem(x, y, true);
+
+            if (!Won)
+                Won = marks.Row(y).All(m => m) || marks.Column(x).All(m => m);
         }
 
-        return false;
+        return Won;
     }
 
-    public bool Check(int x, int y)
-    {
-        var won = marks.Select(row => row[x]).All(v => v)
-            || marks[y].All(v => v);
-        if (won)
-            Won = true;
-
-        return won;
-    }
-
-    public IEnumerable<int> Unmarked()
-    {
-        for (var y = 0; y < height; y++)
-            for (var x = 0; x < width; x++)
-                if (!marks[y][x])
-                    yield return board[y][x];
-    }
+    public int SumUnmarked() =>
+        lookup.Keys.Sum();
 }

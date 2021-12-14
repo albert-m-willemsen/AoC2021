@@ -1,78 +1,72 @@
-﻿var inputLines = await File.ReadAllLinesAsync("input.txt");
+﻿var exampleLines = await Runner.LoadInput("example.txt");
 
-/// <summary>
-/// Day 6, part 1.
-/// </summary>
-Performance.Measure(() => Enumerable.Range(1, 80)
-    .Aggregate(
-        getState(inputLines),
-        (state, _) => simulateBruteForce(state)
-    )
-    .Length
-);
+Console.WriteLine("Examples:");
+Runner.Run(exampleLines, Day6Part1BruteForce18);
+Runner.Run(exampleLines, Day6Part1BruteForce);
+Runner.Run(exampleLines, Day6Part1);
+Runner.Run(exampleLines, Day6Part2);
 
-/// <summary>
-/// Day 6, part 1.
-/// </summary>
-Performance.Measure(() => Enumerable.Range(1, 80)
-    .Aggregate(
-        getFlattenedState(inputLines),
-        (state, _) => simulateSmart(state)
-    )
-    .Sum()
-);
+var inputLines = await Runner.LoadInput("input.txt");
 
-/// <summary>
-/// Day 6, part 2.
-/// </summary>
-Performance.Measure(() => Enumerable.Range(1, 256)
+Console.WriteLine("Challenges:");
+Runner.Run(inputLines, Day6Part1BruteForce);
+Runner.Run(inputLines, Day6Part1);
+Runner.Run(inputLines, Day6Part2);
+
+
+[Challenge(6, 1)]
+static int Day6Part1BruteForce18(IImmutableList<string> lines) =>
+    SimulateBruteForce(lines, 18).Count;
+
+[Challenge(6, 1)]
+static int Day6Part1BruteForce(IImmutableList<string> lines) =>
+    SimulateBruteForce(lines, 80).Count;
+
+
+[Challenge(6, 1)]
+static long Day6Part1(IImmutableList<string> lines) =>
+    SimulateSmart(lines, 80)
+        .Sum();
+
+[Challenge(6, 2)]
+static long Day6Part2(IImmutableList<string> lines) =>
+    SimulateSmart(lines, 256)
+        .Sum();
+
+static IImmutableList<int> GetState(IImmutableList<string> lines) =>
+    lines[0].Split(',')
+        .Select(v => Convert.ToInt32(v))
+        .ToImmutableArray();
+
+static IImmutableList<int> SimulateBruteForce(IImmutableList<string> lines, int days) =>
+        Enumerable.Range(1, days)
+            .Aggregate(
+                GetState(lines),
+                (state, _) => SimulateStepBruteForce(state)
+            );
+
+static IImmutableList<int> SimulateStepBruteForce(IImmutableList<int> state) =>
+    state
+        .Select(fish => fish == 0 ? 6 : fish - 1)
+        .Concat(Enumerable.Repeat(8, state.Count(fish => fish == 0)))
+        .ToImmutableArray();
+
+static IImmutableList<long> GetFlattenedState(IImmutableList<string> lines) =>
+    GetState(lines)
+        .Aggregate(new long[9].ToImmutableArray(), (acc, fish) =>
+            acc.SetItem(fish, acc[fish] + 1)
+        );
+
+static IImmutableList<long> SimulateSmart(IImmutableList<string> lines, int days) =>
+    Enumerable.Range(1, days)
         .Aggregate(
-            getFlattenedState(inputLines),
-            (state, _) => simulateSmart(state)
-        )
-        .Sum()
-);
+            GetFlattenedState(lines),
+            (state, _) => SimulateStepSmart(state)
+        );
 
-static byte[] getState(string[] lines) => lines[0].Split(',')
-        .Select(v => Convert.ToByte(v))
-        .ToArray();
-
-static long[] getFlattenedState(string[] lines) => getState(lines)
-    .Aggregate(new long[9], (acc, fish) =>
-    {
-        acc[fish] += 1;
-        return acc;
-    });
-
-static byte[] simulateBruteForce(byte[] state)
-{
-    var length = state.Length;
-    var toAppend = 0;
-    for (var i = 0; i < length; i++)
-    {
-        var fish = state[i];
-        if (fish == 0)
-        {
-            state[i] = 6;
-            toAppend += 1;
-        }
-        else
-            state[i] -= 1;
-    }
-
-    return state
-        .Concat(Enumerable.Repeat((byte)8, toAppend))
-        .ToArray();
-};
-
-static long[] simulateSmart(long[] state)
-{
-    var adultFish = state[0];
-    for (var i = 0; i < 8; i++)
-        state[i] = state[i + 1];
-
-    state[6] += adultFish;
-    state[8] = adultFish;
-
-    return state;
-};
+static IImmutableList<long> SimulateStepSmart(IImmutableList<long> state) =>
+    Enumerable.Range(0, state.Count - 1)
+        .Select(i => state[i + 1])
+        .ToImmutableArray()
+        .SetItem(6, state[7] + state[0])
+        .Add(state[0]);
